@@ -3,7 +3,7 @@
 <!--<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">-->
 <nav>
   <h1>Python SDK Integration</h1>
-  <span>{{ g.user['user_name'] }} - {{ g.user['user_id'] }}</span>
+  <span>{{ g.user['user_name'] }} - {{ g.user['user_id'] }} -- [{{ g.user['user_valid'] }}]</span>
   <a href="{{ url_for('clear_session') }}">Clear Session</a>
 </nav>
 <section class="content">

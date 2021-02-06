@@ -56,6 +56,10 @@ def get_random_name():
 def get_random_user_id():
     random_id = ''
     for i in range(0, 32):
-        idx = random.randint(0,62)
+        idx = random.randint(0,61)
         random_id += RANDOM_GENERATOR_DATA[idx]
     return random_id
+
+
+def get_random_user_valid_status():
+    return random.randint(0,1) == 1
