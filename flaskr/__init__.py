@@ -98,6 +98,7 @@ def create_app():
 
     ACCOUNT_ID = os.environ.get("ACCOUNT_ID")
     SDK_KEY = os.environ.get("SDK_KEY")
+    SECRET_KEY = os.environ.get("SECRET_KEY")
 
     user_storage_instance = UserStorage()
 
@@ -113,7 +114,8 @@ def create_app():
 
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_pyfile("config.cfg")
+    app.config['DEBUG'] = True
+    app.secret_key = SECRET_KEY
 
     @app.before_request
     def check_user():
