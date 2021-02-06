@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}History Page - Feature Rollout{% endblock %}</h1>
+{% endblock %}
+
+
+{% block content %}
+<p> ------------- </p>
+<p> Default Data </p>
+<p>{{ default_data }}</p>
+<p> ------------- </p>
+<p> New Data </p>
+<p>{{ data }}</p>
+<p> ------------- </p>
+<p> is user part of campaign => {{ is_user_part_of_campaign }} </p>
+<p> ------------- </p>
+<p>{{ file }}</p>
+<p> ------------- </p>
+{% endblock %}

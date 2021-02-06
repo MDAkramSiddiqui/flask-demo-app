@@ -1,0 +1,17 @@
+<!doctype html>
+<title>{% block title %}{% endblock %}</title>
+<!--<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">-->
+<nav>
+  <h1>Python SDK Integration</h1>
+  <span>{{ g.user['user_name'] }} - {{ g.user['user_id'] }}</span>
+  <a href="{{ url_for('clear_session') }}">Clear Session</a>
+</nav>
+<section class="content">
+  <header>
+    {% block header %}{% endblock %}
+  </header>
+  {% for message in get_flashed_messages() %}
+    <div class="flash">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</section>
