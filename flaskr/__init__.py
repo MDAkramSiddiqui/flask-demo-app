@@ -6,7 +6,7 @@ import os
 from flask import (
     Flask, g, render_template, session, redirect, url_for
 )
-from vwo import UserStorage, GOAL_TYPES
+from vwo import UserStorage, GOAL_TYPES, LOG_LEVELS
 
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -53,8 +53,29 @@ def init_vwo_sdk_via_launch_func(account_id, sdk_key):
     global vwo_client_instance
     global settings_file
     global user_storage_instance
+    global vwo_logger
 
     print('INIT SDK CALLED - POLLING - Launch Function')
+
+    new_settings_file = vwo.get_settings_file(account_id, sdk_key)
+    stringify_old_settings_file = json.dumps(settings_file)
+
+    if new_settings_file != stringify_old_settings_file:
+        print('SETTINGS UPDATED')
+        settings_file = json.loads(new_settings_file)
+
+        vwo_client_instance = vwo.launch(
+            new_settings_file,
+            None,
+            user_storage_instance,
+            True,
+            log_level=LOG_LEVELS.DEBUG,
+            goal_type_to_track=GOAL_TYPES.ALL,
+            should_track_returning_user=True
+        )
+
+        print('VWO SDK INSTANCE CREATED')
+
 
 
 def init_vwo_sdk_via_vwo_class(account_id, sdk_key):
@@ -101,16 +122,17 @@ def create_app():
     SECRET_KEY = os.environ.get("SECRET_KEY")
 
     user_storage_instance = UserStorage()
+    vwo_logger = CustomLogger()
 
-    # Using VWO Class
-    init_vwo_sdk_via_vwo_class(ACCOUNT_ID, SDK_KEY)
-    POLL_TIME = 10
-    set_interval(lambda: init_vwo_sdk_via_vwo_class(ACCOUNT_ID, SDK_KEY), POLL_TIME)
-
-    # Using launch function
+    # # Using VWO Class
     # init_vwo_sdk_via_vwo_class(ACCOUNT_ID, SDK_KEY)
     # POLL_TIME = 10
-    # set_interval(lambda: init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY), POLL_TIME)
+    # set_interval(lambda: init_vwo_sdk_via_vwo_class(ACCOUNT_ID, SDK_KEY), POLL_TIME)
+
+    # Using launch function
+    init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY)
+    POLL_TIME = 10
+    set_interval(lambda: init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY), POLL_TIME)
 
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
