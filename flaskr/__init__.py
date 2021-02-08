@@ -4,7 +4,7 @@ import json
 import os
 
 from flask import (
-    Flask, g, render_template, session, redirect, url_for
+    Flask, g, render_template, session, redirect, url_for, request
 )
 from vwo import UserStorage, GOAL_TYPES, LOG_LEVELS
 
@@ -68,7 +68,7 @@ def init_vwo_sdk_via_launch_func(account_id, sdk_key):
             new_settings_file,
             None,
             user_storage_instance,
-            True,
+            False,
             log_level=LOG_LEVELS.DEBUG,
             goal_type_to_track=GOAL_TYPES.ALL,
             should_track_returning_user=True
@@ -309,5 +309,17 @@ def create_app():
             is_user_part_of_campaign=is_user_part_of_feature_rollout_campaign,
             file=settings_file
         )
+
+    @app.route('/push_tag')
+    def push_tag():
+        return render_template('push.html')
+
+    @app.route('/handle_push_new_tag', methods=['POST'])
+    def handle_push_new_tag():
+        tag_name = request.form['tag_name']
+        tag_value = request.form['tag_value']
+        vwo_client_instance.push(tag_name, tag_value, session['user_id'])
+
+        return redirect(url_for('push_tag'))
 
     return app

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Home Page - Feature Test{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<form action="{{ url_for('handle_push_new_tag') }}" method="post">
+    <input type="text" name="tag_name"/>
+    <input type="text" name="tag_value"/>
+    <button type="submit"> Push Tag </button>
+</form>
+{% endblock %}
+
