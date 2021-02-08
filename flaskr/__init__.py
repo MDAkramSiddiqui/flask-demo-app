@@ -144,13 +144,25 @@ def create_app():
         user_id = session.get('user_id')
         user_name = session.get('user_name')
         user_valid = session.get('user_valid')
+        user_special = session.get('user_special')
 
-        if user_id is None or user_name is None or user_valid is None:
+        if (
+            user_id is None or
+            user_name is None or
+            user_valid is None or
+            user_special is None
+        ):
             session['user_id'] = user.get_random_user_id()
             session['user_name'] = user.get_random_name()
             session['user_valid'] = user.get_random_user_valid_status()
+            session['user_special'] = user.get_random_user_special_status()
 
-        g.user = {'user_name': session['user_name'], 'user_id': session['user_id'], 'user_valid': session['user_valid']}
+        g.user = {
+            'user_name': session['user_name'],
+            'user_id': session['user_id'],
+            'user_valid': session['user_valid'],
+            'user_special': session['user_special']
+        }
 
     @app.route('/clear_session')
     def clear_session():
@@ -179,7 +191,7 @@ def create_app():
             config.get('campaign_key'),
             session['user_id'],
             config['goal_identifier'],
-            custom_variables={'is_active': session['user_valid']}
+            custom_variables={'is_active': session['user_valid'], 'is_special': session['user_special']}
         )
 
         price_var = vwo_client_instance.get_feature_variable_value(

@@ -63,3 +63,6 @@ def get_random_user_id():
 
 def get_random_user_valid_status():
     return random.randint(0,1) == 1
+
+def get_random_user_special_status():
+    return random.randint(0,1) == 1
