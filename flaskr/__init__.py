@@ -4,7 +4,7 @@ import json
 import os
 
 from flask import (
-    Flask, g, render_template, session, redirect, url_for, request
+    Flask, g, render_template, session, redirect, url_for, request, Response
 )
 from vwo import UserStorage, GOAL_TYPES, LOG_LEVELS
 
@@ -335,11 +335,13 @@ def create_app():
         if WEBHOOK_KEY and request.headers['x-vwo-auth']:
             if request.headers['x-vwo-auth'] != WEBHOOK_KEY:
                 print('Webhook api authentication failed', flush=True)
+                return Response(status=401)
             else:
                 print('Webhook api authentication successful', flush=True)
         else:
             print('Skipping authentication as missing authentication key', flush=True)
 
         init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY, True)
+        return Response(status=204)
 
     return app
