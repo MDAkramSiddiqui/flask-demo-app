@@ -16,14 +16,14 @@ from flaskr.models import home_model, history_model, about_model
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-def set_interval(func, sec):
-    def func_wrapper():
-        set_interval(func, sec)
-        func()
-
-    t = threading.Timer(sec, func_wrapper)
-    t.start()
-    return t
+# def set_interval(func, sec):
+#     def func_wrapper():
+#         set_interval(func, sec)
+#         func()
+#
+#     t = threading.Timer(sec, func_wrapper)
+#     t.start()
+#     return t
 
 
 # GLOBAL VARIABLES
@@ -49,7 +49,7 @@ class CustomLogger:
         print(level, message)
 
 
-def init_vwo_sdk_via_launch_func(account_id, sdk_key):
+def init_vwo_sdk_via_launch_func(account_id, sdk_key, is_via_webhook=False):
     global vwo_client_instance
     global settings_file
     global user_storage_instance
@@ -57,7 +57,7 @@ def init_vwo_sdk_via_launch_func(account_id, sdk_key):
 
     print('INIT SDK CALLED - POLLING - Launch Function')
 
-    new_settings_file = vwo.get_settings_file(account_id, sdk_key)
+    new_settings_file = vwo.get_settings_file(account_id, sdk_key, is_via_webhook)
     stringify_old_settings_file = json.dumps(settings_file)
 
     if new_settings_file != stringify_old_settings_file:
@@ -120,6 +120,7 @@ def create_app():
     ACCOUNT_ID = os.environ.get("ACCOUNT_ID")
     SDK_KEY = os.environ.get("SDK_KEY")
     SECRET_KEY = os.environ.get("SECRET_KEY")
+    WEBHOOK_KEY = os.environ.get("WEBHOOK_KEY")
 
     user_storage_instance = UserStorage()
     vwo_logger = CustomLogger()
@@ -132,7 +133,7 @@ def create_app():
     # Using launch function
     init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY)
     POLL_TIME = 10
-    set_interval(lambda: init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY), POLL_TIME)
+    # set_interval(lambda: init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY), POLL_TIME)
 
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
@@ -324,5 +325,21 @@ def create_app():
         vwo_client_instance.push(tag_name, tag_value, session['user_id'])
 
         return redirect(url_for('push_tag'))
+
+    ###############################
+    ########## WEBHOOKS ###########
+    ###############################
+    @app.route('/webhook_api', methods=['POST'])
+    def handle_webhook_update():
+        print('Webhooks triggered', flush=True)
+        if WEBHOOK_KEY and request.headers['x-vwo-auth']:
+            if request.headers['x-vwo-auth'] != WEBHOOK_KEY:
+                print('Webhook api authentication failed', flush=True)
+            else:
+                print('Webhook api authentication successful', flush=True)
+        else:
+            print('Skipping authentication as missing authentication key', flush=True)
+
+        init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY, True)
 
     return app
