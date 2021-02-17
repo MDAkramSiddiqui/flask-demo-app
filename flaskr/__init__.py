@@ -4,7 +4,7 @@ import json
 import os
 
 from flask import (
-    Flask, g, render_template, session, redirect, url_for, request, Response
+    Flask, g, render_template, session, redirect, url_for, request, abort, make_response
 )
 from vwo import UserStorage, GOAL_TYPES, LOG_LEVELS
 
@@ -16,14 +16,14 @@ from flaskr.models import home_model, history_model, about_model
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-# def set_interval(func, sec):
-#     def func_wrapper():
-#         set_interval(func, sec)
-#         func()
-#
-#     t = threading.Timer(sec, func_wrapper)
-#     t.start()
-#     return t
+def set_interval(func, sec):
+    def func_wrapper():
+        set_interval(func, sec)
+        func()
+
+    t = threading.Timer(sec, func_wrapper)
+    t.start()
+    return t
 
 
 # GLOBAL VARIABLES
@@ -49,6 +49,14 @@ class CustomLogger:
         print(level, message)
 
 
+# def update_sdk_settings_file(is_via_webhook=False):
+#     global vwo_client_instance
+#     global settings_file
+#
+#     if vwo_client_instance:
+#         settings_file = vwo_client_instance.get_and_update_settings_file(AccountDetails.get('account_id'), AccountDetails.get('sdk_key'), is_via_webhook)
+
+
 def init_vwo_sdk_via_launch_func(account_id, sdk_key, is_via_webhook=False):
     global vwo_client_instance
     global settings_file
@@ -59,6 +67,7 @@ def init_vwo_sdk_via_launch_func(account_id, sdk_key, is_via_webhook=False):
 
     new_settings_file = vwo.get_settings_file(account_id, sdk_key, is_via_webhook)
     stringify_old_settings_file = json.dumps(settings_file)
+    print(new_settings_file)
 
     if new_settings_file != stringify_old_settings_file:
         print('SETTINGS UPDATED')
@@ -68,7 +77,7 @@ def init_vwo_sdk_via_launch_func(account_id, sdk_key, is_via_webhook=False):
             new_settings_file,
             None,
             user_storage_instance,
-            False,
+            True,
             log_level=LOG_LEVELS.DEBUG,
             goal_type_to_track=GOAL_TYPES.ALL,
             should_track_returning_user=True
@@ -133,7 +142,7 @@ def create_app():
     # Using launch function
     init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY)
     POLL_TIME = 10
-    # set_interval(lambda: init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY), POLL_TIME)
+    # set_interval(lambda: vwo_client_instance.get_and_update_settings_file(ACCOUNT_ID, SDK_KEY, False), POLL_TIME)
 
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
@@ -331,17 +340,21 @@ def create_app():
     ###############################
     @app.route('/webhook_api', methods=['POST'])
     def handle_webhook_update():
-        print('Webhooks triggered', flush=True)
-        if WEBHOOK_KEY and request.headers['x-vwo-auth']:
+        print('\nWEBHOOK TRIGGERED, {body}, \nWebhook Auth Key: {webhook_auth_key}'
+              .format(body=request.json, webhook_auth_key=request.headers.get('x-vwo-auth')),
+              flush=True
+              )
+        # print('Webhooks triggered', flush=True)
+        if WEBHOOK_KEY and request.headers.get('x-vwo-auth'):
             if request.headers['x-vwo-auth'] != WEBHOOK_KEY:
                 print('Webhook api authentication failed', flush=True)
-                return Response(status=401)
+                abort(401)
             else:
                 print('Webhook api authentication successful', flush=True)
         else:
             print('Skipping authentication as missing authentication key', flush=True)
 
-        init_vwo_sdk_via_launch_func(ACCOUNT_ID, SDK_KEY, True)
-        return Response(status=204)
+        settings_file = json.loads(vwo_client_instance.get_and_update_settings_file(ACCOUNT_ID, SDK_KEY, True))
+        return make_response({'status': 'success', 'message': 'settings updated successfully'}, 200)
 
     return app
